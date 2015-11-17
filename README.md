@@ -5,7 +5,7 @@ Some useful Docker images used by Vertis.
 All images are created from the ```vertisfinance/base``` base image. See details below.
 
 ### Minimal Image Size
-This is a common goal image developers should take care of. There are some standard techniques and best practices to follow. Note that we do not go to extremes here: starting from a ```debian``` is OK for us.
+This is a common goal image developers should take care of. There are some standard techniques and best practices to follow. Note that we do not go to extremes here: starting from ```debian``` seems to be OK for us.
 
 ### Configuration
 Configuring a container based on an image should be easy and straightforward.
