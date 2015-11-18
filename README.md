@@ -2,35 +2,42 @@
 Some useful Docker images used by Vertis.
 
 ## Concepts
-All images are created from the ```vertisfinance/base``` base image. See details below.
+All images are created from our ```vertisfinance/base``` image. See details below.
 
 ### Minimal Image Size
 This is a common goal image developers should take care of. There are some standard techniques and best practices to follow. Note that we do not go to extremes here: starting from ```debian``` seems to be OK for us.
 
 ### Configuration
-Configuring a container based on an image should be easy and straightforward.
-This is not easy to do right: There are too many places where one can put the same config value; sometimes you need to put the same value in multiple places.
+Configuring your container should be easy and straightforward.
+This is not easy to do right: There are too many places where one can put the same config value. Even worse, sometimes you need to put the same value in multiple places.
+
 In our setup, configuration can go to:
 - the ```Dockerfile```
+- ```docker-compose.yml```
+- the config file of your container's service (```pg_hba.conf```, ```nginx.conf```, etc.)
+- ```run.py``` - see below
 
+To make life a little easier, we need extensive documentation and some conventions to help design decisions. Some of these conventions are:
+- The compose file is the best place for configuration
+- Service config files should be placed to ```/opt/config``` and copied to an other location during startup. When a config value is given in an environment variable and need to be referenced in a ```.conf``` file, use variable substitution / templating.
+- Do reasonable checking at startup time.
 
-Main design goals are:
-- Small image size.
-- Maximum flexibility, easy configuration.
-- The primary place of configuration is in environment variables, usage is documented in the provided compose files.
-- User and group ids are configurable.
-- Where services are normally configured by config files (postgres, nginx, etc.), there should be general ways to put these files inside containers. (See below.)
-- Consistency checking at startup.
-- Semafors to provide signal for dependent services.
-- run.py as a startup mechanism.
+### Templating
+Example syntax (in ```whatever.conf```):
+```
+logging: file
+log_path: {{LOG_PATH}}
+```
+In the above case ```LOG_PATH``` must be given as an environment variable. During container startup this will be substituted and the file will be copied to an other location.
 
-### The Config Problem
-Configuration can be hard to do in a non-redundant way. By redundancy I mean situations where you need to provide a value in environment variable, in a config file and maybe in ```run.py```. It can be hard to find a bug caused by only updating log file path in docker-compose.yml, but not in nginx.conf. 
+### ```run.py```
 
-While there are many possible solutions to this problem, most off them would restrict flexibility in an undesirable way. The best we can do is
-- try to push config into environment variables and reuse them in config files.
-- Supported variables should be well documented
-- Provide as many startup check as possible
+### User, group IDs
 
-## Base
+### Semafors
+
+## Images
+
+### ```vertisfinance/base```
+
 
