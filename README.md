@@ -23,21 +23,33 @@ To make life a little easier, we need extensive documentation and some conventio
 - Do reasonable checking at startup time.
 
 ### Templating
-Example syntax (in ```whatever.conf```):
+Example syntax (in an imaginary ```whatever.conf``` file):
 ```
 logging: file
 log_path: {{LOG_PATH}}
 ```
 In the above case ```LOG_PATH``` must be given as an environment variable. During container startup this will be substituted and the file will be copied to an other location.
 
-### ```run.py```
+### run.py
+All images have an entrypoint set to ```['python3', '/opt/config/run.py']```. This file uses python3 (as you may have guessed) and the great [click](http://click.pocoo.org/5/) package to create commands. If you want to customize your container behaviour, you will need to have a look at this file sooner or later.
+This file imports from the ```runutils``` package which is installed by the base image and contains some utility functions to make writing common startup tasks (check for directory existence, creating users, groups, substitue variables in config files, run background services, etc.) easier.
+
+With docker 1.9 one can set ```STOPSIGNAL``` to tell the docker daemon what signal to send to the container on stop, but in older versions this signal was always ```SIGTERM```. Originally ```run.py``` was written to catch this and send the proper signal to the main service.
 
 ### User, group IDs
+We do not hard code uid and gid in the image. Whoever runs the container, she must be able to set the user and group ids of container processes. At some point in the future docker will be able to handle user namespaces, until then we must be able to provide this feature as a handmade solution.
 
 ### Semafors
+In some situations it is important for a container to start its service only after some other services are available. Starting the container's service is managed by ```runutils.run_daemon```. It is documented in ```runutils.py```, here we will look at only three arguments: ```waitfunc``` and ```initfunc``` are functions, ```semafor``` is a file name given as an absolute path. Here is what the ```run_daemon``` function does:
+- ```waitfunc``` is called. This function should not return until it is safe to run the service, i.e. dependent services are ready.
+- ```initfunc``` is called. It is a good place to do some checks, prepare users, directories, etc. (In fact, directory creation can simply go to ```run.py``` into function ```run```. ```initfunc``` is useful when it uses dependent services: ```waitfunc``` makes sure they are usable.)
+- The main service is started in a subprocess.
+- The file at path given by ```semafor``` is created.
+- When the suprocess exits, the semafor is deleted.
+To summarize: provide a semafor in service ```a``` and check for the existence of the semafor in service ```b```.
 
 ## Images
 
-### ```vertisfinance/base```
+### vertisfinance/base
 
 
