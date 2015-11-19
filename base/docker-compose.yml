@@ -1,0 +1,9 @@
+base:
+    hostname: base
+    image: vertisfinance/base
+    command: start
+    volumes:
+        - "./config:/opt/config"
+    environment:
+        USER_UID: 1000
+        USER_NAME: dev

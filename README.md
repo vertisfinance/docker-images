@@ -19,10 +19,10 @@ In our setup, configuration can go to:
 
 To make life a little easier, we need extensive documentation and some conventions to help design decisions. Some of these conventions are:
 - The compose file is the best place for configuration
-- Service config files should be placed to ```/opt/config``` and copied to an other location during startup. When a config value is given in an environment variable and need to be referenced in a ```.conf``` file, use variable substitution / templating.
+- Service config files should be placed to ```/opt/config``` and copied to an other location during startup. When a config value is given in an environment variable and need to be referenced in a ```.conf``` file, use variable substitution.
 - Do reasonable checking at startup time.
 
-### Templating
+### Variable Substitution
 Example syntax (in an imaginary ```whatever.conf``` file):
 ```
 logging: file
@@ -37,7 +37,7 @@ This file imports from the ```runutils``` package which is installed by the base
 With docker 1.9 one can set ```STOPSIGNAL``` to tell the docker daemon what signal to send to the container on stop, but in older versions this signal was always ```SIGTERM```. Originally ```run.py``` was written to catch this and send the proper signal to the main service.
 
 ### User, group IDs
-We do not hard code uid and gid in the image. Whoever runs the container, she must be able to set the user and group ids of container processes. At some point in the future docker will be able to handle user namespaces, until then we must be able to provide this feature as a handmade solution.
+We do not hard code ```uid``` and ```gid``` in the image. Whoever runs the container, she must be able to set the user and group ids of container processes. At some point in the future docker will be able to handle user namespaces, until then we must be able to provide this feature as a handmade solution.
 
 ### Semafors
 In some situations it is important for a container to start its service only after some other services are available. Starting the container's service is managed by ```runutils.run_daemon```. It is documented in ```runutils.py```, here we will look at only three arguments: ```waitfunc``` and ```initfunc``` are functions, ```semafor``` is a file name given as an absolute path. Here is what the ```run_daemon``` function does:
@@ -46,10 +46,21 @@ In some situations it is important for a container to start its service only aft
 - The main service is started in a subprocess.
 - The file at path given by ```semafor``` is created.
 - When the suprocess exits, the semafor is deleted.
+
 To summarize: provide a semafor in service ```a``` and check for the existence of the semafor in service ```b```.
 
 ## Images
+The general structure of an image directory is this:
+```
+imagedir
+  ├- config
+  |   ├- run.py
+  |   └- ..
+  ├- context
+  |   ├- Dockerfile
+  |   └- ...
+  └- docker-compose.yml
+```
+```context``` is obviously the docker build context, ```config``` is the directory which can be accessed by the container under ```/opt/config/```. This can be done by copying in the Dockerfile, volume binding or even copying directly to an existing container.
 
 ### vertisfinance/base
-
-
