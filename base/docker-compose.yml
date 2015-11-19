@@ -5,5 +5,5 @@ base:
     volumes:
         - "./config:/opt/config"
     environment:
-        USER_UID: 1000
         USER_NAME: dev
+        USER_UID: 1000

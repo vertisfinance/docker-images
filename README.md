@@ -64,3 +64,13 @@ imagedir
 ```context``` is obviously the docker build context, ```config``` is the directory which can be accessed by the container under ```/opt/config/```. This can be done by copying in the Dockerfile, volume binding or even copying directly to an existing container.
 
 ### vertisfinance/base
+A lightweight base image for all subsequent images.
+
+#### Environment variables
+- ```USER_NAME```: optional. The name of the user to be created during startup.
+- ```USER_UID```: optional, but required if ```USER_NAME``` was given. The new user will be created with this id.
+- ```USER_GID```: optional. The group id of the newly created user. If not given, but ```USER_NAME``` is present, ```USER_UID``` will be used.
+
+#### Commands
+- ```start```: No-op
+- ```shell <username=USER_NAME or root>```: Starts bash in the root directory in the name of ```username```.
