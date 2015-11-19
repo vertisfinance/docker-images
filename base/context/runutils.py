@@ -111,7 +111,7 @@ def run_cmd(args, message=None, input=None, user=None):
 def run_daemon(params, stdout=None, stderr=None,
                signal_to_send=signal.SIGTERM,
                waitfunc=None, user=None,
-               semafor=None, initfunc=None):
+               semaphore=None, initfunc=None):
     """
     Runs the command as the given user (or root by default) in daemon mode
     and exits with it's returncode.
@@ -126,12 +126,12 @@ def run_daemon(params, stdout=None, stderr=None,
     can go here (create directories, db users, etc.) but should return as
     soon as object.stopped (must accept this parameter) is True.
 
-    If semafor is provided it must be a path to a file. This file will
+    If semaphore is provided it must be a path to a file. This file will
     be created after the main process is launched. Before exit the file
     will be deleted. Semafors can be used by other containers in their
-    `waitfunc`. The presence of semafor does not mean the service is ready
+    `waitfunc`. The presence of semaphore does not mean the service is ready
     (ex. a database can accept connections), only that the process is started.
-    A well designed `waitfunc` should first wait for the semafor, then test
+    A well designed `waitfunc` should first wait for the semaphore, then test
     the service (ex. try to connect the db until it succeeds).
     """
     class Stopper(object):
@@ -165,15 +165,15 @@ def run_daemon(params, stdout=None, stderr=None,
             params, stdout=stdout, stderr=stderr, preexec_fn=_setuser)
         subprocess_wrapper.subprocess = sp
 
-        if semafor:
-            open(semafor, 'w').close()
+        if semaphore:
+            open(semaphore, 'w').close()
 
         waitresult = sp.wait()
     else:
         waitresult = 0
 
     try:
-        os.remove(semafor)
+        os.remove(semaphore)
     except:
         pass
 
