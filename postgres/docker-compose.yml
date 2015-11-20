@@ -1,0 +1,15 @@
+postgres:
+    hostname: postgres
+    image: vertisfinance/postgres
+    command: start
+    volumes:
+        - "./config:/opt/config"
+        - "/opt/data"
+    environment:
+        PGDATA: /opt/data/postgres
+        USER_UID: 5432
+        USER_NAME: pg
+    ports:
+        - "5432:5432"
+    # entrypoint: ["python3", "/opt/config/run.py"]
+

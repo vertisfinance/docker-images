@@ -19,16 +19,22 @@ from runutils import runbash, getvar, ensure_user, ensure_dir, run_cmd
 # # CONFIGURATION: Edit if necessary #
 # ####################################
 
-USER_UID = int(getvar('USER_UID'))
-USER_NAME = getvar('USER_NAME')
+USER_NAME = getvar('USER_NAME', required=False)
+
+if USER_NAME is not None:
+    USER_UID = int(getvar('USER_UID'))
+    USER_GID = int(getvar('USER_GID', required=False) or USER_UID)
+else:
+    USER_UID, USER_GID = None, None
+
+DEFAULT_USERNAME = USER_NAME or 'root'
 PGDATA = getvar('PGDATA')
+PGDATA_PARENT = os.path.split(PGDATA)[0]
 
 # CONFIG_FILE = '/config/postgresql.conf'
 # SOCKET_DIR = '/data/sock'
 # BACKUP_DIR = '/data/backup'
 # SEMAFOR = '/data/sock/pg_semafor'
-
-PGDATA_PARENT = os.path.split(PGDATA)[0]
 
 
 # ##################################
@@ -138,7 +144,8 @@ def _initdb():
 #     params = ['pg_dump', '-h', SOCKET_DIR, '-O', '-x', '-U', user, database]
 
 #     with open(filename, 'w') as f, running_db():
-#         ret = subprocess.call(params, stdout=f, preexec_fn=setuser('postgres'))
+#         ret = subprocess.call(
+#             params, stdout=f, preexec_fn=setuser('postgres'))
 
 #     uid, gid, _ = id('postgres')
 #     os.chown(filename, uid, gid)
@@ -234,9 +241,9 @@ def _initdb():
 
 @click.group()
 def run():
-    ensure_user(USER_NAME, USER_UID)
-    ensure_dir(PGDATA_PARENT,
-               owner='root', group='root', permission_str='777')
+    ensure_user(USER_NAME, USER_UID, gid=USER_GID)
+    ensure_dir(
+        PGDATA_PARENT, owner='root', group='root', permission_str='777')
 
     if not os.path.isdir(PGDATA):
         _initdb()
@@ -310,7 +317,8 @@ def shell(user):
 
 # @run.command()
 # def start():
-#     run_daemon(start_postgres, user='postgres', semafor=SEMAFOR, initfunc=init)
+#     run_daemon(
+#         start_postgres, user='postgres', semafor=SEMAFOR, initfunc=init)
 
 
 if __name__ == '__main__':

@@ -74,3 +74,15 @@ A lightweight base image for all subsequent images.
 #### Commands
 - ```start```: No-op
 - ```shell <username=USER_NAME or root>```: Starts bash in the root directory in the name of ```username```.
+
+### vertisfinance/postgres
+Postgresql 9.4
+
+#### Environment variables
+- ```USER_NAME```: optional. The name of the user to be created during startup.
+- ```USER_UID```: optional, but required if ```USER_NAME``` was given. The new user will be created with this id.
+- ```USER_GID```: optional. The group id of the newly created user. If not given, but ```USER_NAME``` is present, ```USER_UID``` will be used.
+
+#### Commands
+- ```start```: No-op
+- ```shell <username=USER_NAME or root>```: Starts bash in the root directory in the name of ```username```.
