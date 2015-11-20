@@ -67,7 +67,7 @@ def ensure_user(username, uid, groupname=None, gid=None, unlock=False):
         pass
 
 
-def run_cmd(args, message=None, input=None, user=None):
+def run_cmd(args, message=None, input=None, user=None, printoutput=False):
     """
     Executes a one-off command. The message will be printed on terminal.
     If input is given, it will be passed to the subprocess.
@@ -80,15 +80,21 @@ def run_cmd(args, message=None, input=None, user=None):
 
     if input is None:
         try:
-            subprocess.check_output(
+            output = subprocess.check_output(
                 args, stderr=subprocess.STDOUT, preexec_fn=_setuser)
-        except subprocess.CalledProcessError as e:
+            output = output.decode('utf-8')
+        except subprocess.CalledProcessError:
             if message:
                 click.secho('✘', fg='red')
-            raise Exception(e.output) from None
+            # raise Exception(e.output) from None
+            if printoutput:
+                click.secho(output, fg='red')
+            raise
         else:
             if message:
                 click.secho('✔', fg='green')
+            if printoutput:
+                click.secho(output, fg='green')
     else:
         sp = subprocess.Popen(
             args,
@@ -248,10 +254,15 @@ def merge_dir(src, dst, owner=None, group=None, permission_str=None):
         for f in filenames:
             srcfile = os.path.join(path, f)
             pairfile = os.path.join(pair, f)
-            shutil.copy(srcfile, pairfile)
-            if owner:
-                subprocess.call(['chown', owner, pairfile])
-            if group:
-                subprocess.call(['chgrp', group, pairfile])
-            if permission_str:
-                subprocess.call(['chmod', permission_str, pairfile])
+            copyfile(srcfile, pairfile,
+                     owner=owner, group=group, permission_str=permission_str)
+
+
+def copyfile(src, dest, owner=None, group=None, permission_str=None):
+    shutil.copy(src, dest)
+    if owner:
+        subprocess.call(['chown', owner, dest])
+    if group:
+        subprocess.call(['chgrp', group, dest])
+    if permission_str:
+        subprocess.call(['chmod', permission_str, dest])

@@ -12,36 +12,33 @@ import click
 
 # from runutils import (run_daemon, getvar, runbash, id, run_cmd, setuser,
 #                       ensure_dir)
-from runutils import runbash, getvar, ensure_user, ensure_dir, run_cmd
+from runutils import (runbash, getvar, ensure_user, ensure_dir, run_cmd,
+                      run_daemon, copyfile, substitute)
 
 
 # ####################################
 # # CONFIGURATION: Edit if necessary #
 # ####################################
 
-USER_NAME = getvar('USER_NAME', required=False)
-
-if USER_NAME is not None:
-    USER_UID = int(getvar('USER_UID'))
-    USER_GID = int(getvar('USER_GID', required=False) or USER_UID)
-else:
-    USER_UID, USER_GID = None, None
-
-DEFAULT_USERNAME = USER_NAME or 'root'
+USER_NAME = getvar('USER_NAME', default='postgres')
+USER_UID = int(getvar('USER_UID', default=5432))
+USER_GID = int(getvar('USER_GID', required=False) or USER_UID)
 PGDATA = getvar('PGDATA')
-PGDATA_PARENT = os.path.split(PGDATA)[0]
-
-# CONFIG_FILE = '/config/postgresql.conf'
-# SOCKET_DIR = '/data/sock'
+CONFIG_FILE = getvar('CONFIG_FILE')
+HBA_FILE = getvar('HBA_FILE')
+SOCKET_DIR = getvar('SOCKET_DIR')
+LOG_DIR = getvar('LOG_DIR', required=False)
 # BACKUP_DIR = '/data/backup'
-# SEMAFOR = '/data/sock/pg_semafor'
+# SEMAPHOR = '/data/sock/pg_semafor'
+
+PGDATA_PARENT = os.path.split(PGDATA)[0]
 
 
 # ##################################
 # # UTILITY FUNCTIONS: do not edit #
 # ##################################
 
-# start_postgres = ['postgres', '-c', 'config_file=%s' % CONFIG_FILE]
+start_postgres = ['postgres', '-c', 'config_file=%s' % '/postgresql.conf']
 
 
 # def psqlparams(command=None, database='postgres'):
@@ -84,7 +81,10 @@ PGDATA_PARENT = os.path.split(PGDATA)[0]
 def _initdb():
     """Initialize the database."""
 
-    run_cmd(['initdb'], user=USER_NAME, message='Initializing the database')
+    run_cmd(['initdb'],
+            user=USER_NAME,
+            message='Initializing the database',
+            printoutput=False)
 
 
 # def _createuser(username, password):
@@ -244,10 +244,23 @@ def run():
     ensure_user(USER_NAME, USER_UID, gid=USER_GID)
     ensure_dir(
         PGDATA_PARENT, owner='root', group='root', permission_str='777')
+    ensure_dir(
+        SOCKET_DIR, owner='root', group='root', permission_str='777')
+    ensure_dir(
+        LOG_DIR, owner='root', group='root', permission_str='777')
 
     if not os.path.isdir(PGDATA):
         _initdb()
         # _setpwd('postgres', getvar('DB_PASSWORD'))
+
+    # copy config files
+    copyfile(CONFIG_FILE, '/postgresql.conf',
+             owner=USER_NAME, group=USER_NAME, permission_str='400')
+    copyfile(HBA_FILE, '/pg_hba.conf',
+             owner=USER_NAME, group=USER_NAME, permission_str='400')
+
+    substitute('/postgresql.conf', {'SOCKET_DIR': SOCKET_DIR,
+                                    'LOG_DIR': LOG_DIR})
 
 
 @run.command()
@@ -315,10 +328,10 @@ def shell(user):
 #     _clear()
 
 
-# @run.command()
-# def start():
-#     run_daemon(
-#         start_postgres, user='postgres', semafor=SEMAFOR, initfunc=init)
+@run.command()
+def start():
+    run_daemon(
+        start_postgres, user=USER_NAME)
 
 
 if __name__ == '__main__':

@@ -9,7 +9,9 @@ postgres:
         PGDATA: /opt/data/postgres
         USER_UID: 5432
         USER_NAME: pg
+        CONFIG_FILE: /opt/config/postgresql.conf
+        HBA_FILE: /opt/config/pg_hba.conf
+        SOCKET_DIR: /opt/sockets
+        LOG_DIR: /opt/logs/postgres
     ports:
         - "5432:5432"
-    # entrypoint: ["python3", "/opt/config/run.py"]
-

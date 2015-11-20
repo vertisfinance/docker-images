@@ -26,3 +26,5 @@ RUN rmdir /var/lib/postgresql
 RUN rmdir /var/log/postgresql
 
 RUN userdel postgres
+
+ENV LC_ALL en_US.UTF-8
