@@ -6,4 +6,4 @@ base:
         - "./config:/opt/config"
     environment:
         USER_NAME: dev
-        USER_UID: 1000
+        USER_ID: 1000

@@ -1,22 +1,15 @@
 import click
 
-from runutils import runbash, ensure_user, getvar
+from runutils import runbash, ensure_user, get_user_ids
 
 
-USER_NAME = getvar('USER_NAME', required=False)
-
-if USER_NAME is not None:
-    USER_UID = int(getvar('USER_UID'))
-    USER_GID = int(getvar('USER_GID', required=False) or USER_UID)
-else:
-    USER_UID, USER_GID = None, None
-
+USER_NAME, USER_ID, GROUP_NAME, GROUP_ID = get_user_ids('dev', 1000)
 DEFAULT_USERNAME = USER_NAME or 'root'
 
 
 @click.group()
 def run():
-    ensure_user(USER_NAME, USER_UID, gid=USER_GID)
+    ensure_user(USER_NAME, USER_ID, GROUP_NAME, GROUP_ID)
 
 
 @run.command()

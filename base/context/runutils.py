@@ -266,3 +266,20 @@ def copyfile(src, dest, owner=None, group=None, permission_str=None):
         subprocess.call(['chgrp', group, dest])
     if permission_str:
         subprocess.call(['chmod', permission_str, dest])
+
+
+def get_user_ids(default_user_name, default_user_id):
+    user_name = getvar('USER_NAME', required=False)
+
+    if user_name is not None:
+        user_id = int(getvar('USER_ID'))
+    else:
+        user_id = None
+
+    user_name = user_name or default_user_name
+    user_id = user_id or default_user_id
+
+    group_name = getvar('GROUP_NAME', default=user_name, required=False)
+    group_id = getvar('GROUP_ID', default=user_id, required=False)
+
+    return user_name, user_id, group_name, group_id

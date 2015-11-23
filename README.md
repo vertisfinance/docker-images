@@ -68,21 +68,43 @@ A lightweight base image for all subsequent images.
 
 #### Environment variables
 - ```USER_NAME```: optional. The name of the user to be created during startup.
-- ```USER_UID```: optional, but required if ```USER_NAME``` was given. The new user will be created with this id.
-- ```USER_GID```: optional. The group id of the newly created user. If not given, but ```USER_NAME``` is present, ```USER_UID``` will be used.
+- ```USER_ID```: optional, but required if ```USER_NAME``` was given. The new user will be created with this id.
+- ```GROUP_NAME```: optional. The name of the user's primary group. By default it equals to ```USER_NAME```.
+- ```GROUP_ID```: optional. The id of user's primary group. By default it's ```USER_ID```.
 
 #### Commands
 - ```start```: No-op
-- ```shell <username=USER_NAME or root>```: Starts bash in the root directory in the name of ```username```.
+- ```shell [username=USER_NAME]```: Starts bash in the root directory in the name of ```username```.
 
 ### vertisfinance/postgres
 Postgresql 9.4
 
 #### Environment variables
-- ```USER_NAME```: optional. The name of the user to be created during startup.
-- ```USER_UID```: optional, but required if ```USER_NAME``` was given. The new user will be created with this id.
-- ```USER_GID```: optional. The group id of the newly created user. If not given, but ```USER_NAME``` is present, ```USER_UID``` will be used.
+- ```USER_NAME```, ```USER_ID```, ```GROUP_NAME```, ```GROUP_ID``` (as in base)
+- ```PGDATA```: required. Postgres data directory.
+- ```CONFIG_FILE```: required. Points to ```postgres.conf```. Will be copied to ```/postgres.conf```.
+- ```HBA_FILE```: required. Points to ```pg_hba.conf```. Will be copied to ```/pg_hba.conf```.
+- ```SOCKET_DIR```: required. The directory of unix domain socket, where the database listens.
+- ```LOG_DIR```: required, even if we do not log to file.
+- ```BACKUP_DIR```: required. Backup files will be created here.
+- ```SEMAPHORE```: optional. If given a semaphore file will be created.
+
+#### Startup
+- Creates user,
+- Creates ```PGDATA```'s parent directory if needed,
+- Creates ```SOCKET_DIR```, ```LOG_DIR```, ```BACKUP_DIR``` if needed,
+- Creates ```SEMAPHORE```'s parent if not present,
+- Copies ```CONFIG_FILE``` and substitutes ```SOCKET_DIR```, ```LOG_DIR``` variables
+- Copies ```HBA_FILE```.
 
 #### Commands
 - ```start```: No-op
-- ```shell <username=USER_NAME or root>```: Starts bash in the root directory in the name of ```username```.
+- ```shell [username=USER_NAME]```: Starts bash in the root directory in the name of ```username```.
+- ```initdb```: Initializes the database in ```PGDATA``` directory.
+- ```createuser```
+- ```setpwd```
+- ```createdb```
+- ```createschema```
+- ```clear```
+- ```backup```
+- ```restore```
