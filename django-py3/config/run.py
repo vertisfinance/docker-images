@@ -42,7 +42,9 @@ CONN_STR = CONN_STR % (SOCKET_DIR, DB_USERNAME, DB_PASSWORD)
 
 def _init(stopper):
     ensure_dir(STATIC_DIR,
-               owner='django', group='django', permission_str='777')
+               owner='root', group='root', permission_str='777')
+    ensure_dir(
+        SOCKET_DIR, owner='root', group='root', permission_str='777')
 
     if not stopper.stopped:
         run_cmd(['django-admin', 'migrate'],
@@ -75,10 +77,11 @@ def _init(stopper):
             click.echo('Superuser exists')
 
     # copy config files
-    copyfile(UWSGI_CONF, '/uwsgi.conf',
-             owner=USER_NAME, group=GROUP_NAME, permission_str='400')
+    if UWSGI_CONF:
+        copyfile(UWSGI_CONF, '/uwsgi.conf',
+                 owner=USER_NAME, group=GROUP_NAME, permission_str='400')
 
-    substitute('/uwsgi.conf', {'SOCKET_DIR': SOCKET_DIR})
+        substitute('/uwsgi.conf', {'SOCKET_DIR': SOCKET_DIR})
 
 
 def _start_runserver():

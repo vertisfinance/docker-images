@@ -4,7 +4,7 @@ set -e
 
 dir="$(dirname "$BASH_SOURCE")"
 
-for name in base postgres django-py3
+for name in base postgres django-py3 nginx
 do
     out="vertisfinance/${name}"
     outlen=${#out}
