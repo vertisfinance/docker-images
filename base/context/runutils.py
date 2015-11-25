@@ -10,6 +10,11 @@ import shutil
 import click
 
 
+class Stopper(object):
+    def __init__(self):
+        self.stopped = False
+
+
 def getvar(name, default=None, required=True):
     """
     Returns the value of an environment variable.
@@ -82,18 +87,18 @@ def run_cmd(args, message=None, input=None, user=None, printoutput=False):
         try:
             output = subprocess.check_output(
                 args, stderr=subprocess.STDOUT, preexec_fn=_setuser)
-            output = output.decode('utf-8')
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
             if message:
                 click.secho('✘', fg='red')
-            # raise Exception(e.output) from None
             if printoutput:
+                output = e.output.decode('utf-8')
                 click.secho(output, fg='red')
             raise
         else:
             if message:
                 click.secho('✔', fg='green')
             if printoutput:
+                output = output.decode('utf-8')
                 click.secho(output, fg='green')
     else:
         sp = subprocess.Popen(
@@ -140,10 +145,6 @@ def run_daemon(params, stdout=None, stderr=None,
     A well designed `waitfunc` should first wait for the semaphore, then test
     the service (ex. try to connect the db until it succeeds).
     """
-    class Stopper(object):
-        def __init__(self):
-            self.stopped = False
-
     class SubprocessWrapper(object):
         def __init__(self):
             self.subprocess = None

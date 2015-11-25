@@ -1,0 +1,60 @@
+data:
+    hostname: data
+    image: vertisfinance/base
+    command: start
+    volumes:
+        - "../base/config:/opt/config"
+        - "/opt/data"
+    environment:
+        USER_ID: 1000
+        USER_NAME: dev
+
+postgres:
+    hostname: postgres
+    image: vertisfinance/postgres
+    command: start
+    volumes:
+        - "../postgres/config:/opt/config"
+    volumes_from:
+        - data
+    environment:
+        USER_ID: 5432
+        USER_NAME: pg
+        PGDATA: /opt/data/postgres
+        DB_PASSWORD: 'secret-!noproduction!'
+        CONFIG_FILE: /opt/config/postgresql.conf
+        HBA_FILE: /opt/config/pg_hba.conf
+        SOCKET_DIR: /opt/data/sockets
+        LOG_DIR: /opt/data/logs/postgres
+        BACKUP_DIR: /opt/data/db_backup
+        SEMAPHORE: /opt/data/semaphores/postgres
+
+django:
+    hostname: django
+    image: vertisfinance/django-py3
+    command: start
+    volumes:
+        - "./config:/opt/config"
+        - "./src:/opt/src"
+    volumes_from:
+        - data
+    links:
+        - postgres
+    environment:
+        USER_NAME: django
+        USER_ID: 8000
+        UWSGI_CONF: /opt/config/uwsgi.conf
+        PG_SEMAPHORE: /opt/data/semaphores/postgres
+        DB_USERNAME: pg
+        DB_PASSWORD: 'secret-!noproduction!'
+        STATIC_DIR: /opt/data/static
+        SOCKET_DIR: /opt/data/sockets
+        PYTHONPATH: /opt/src/django_project
+        DJANGO_SETTINGS_MODULE: django_project.settings
+        DJANGO_SECRET_KEY: 'secret-!noproduction!'
+        PYTHONUNBUFFERED: 1
+        CREATESUPERUSER_NAME: admin
+        CREATESUPERUSER_EMAIL: admin@acme.com
+        CREATESUPERUSER_PASSWORD: 'secret'
+    ports:
+        - "8000:8000"

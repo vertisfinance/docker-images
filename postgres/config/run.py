@@ -15,7 +15,7 @@ import click
 #                       ensure_dir)
 from runutils import (runbash, getvar, ensure_user, ensure_dir, run_cmd,
                       run_daemon, copyfile, substitute, get_user_ids,
-                      setuser)
+                      setuser, Stopper)
 
 
 # ####################################
@@ -24,6 +24,7 @@ from runutils import (runbash, getvar, ensure_user, ensure_dir, run_cmd,
 
 USER_NAME, USER_ID, GROUP_NAME, GROUP_ID = get_user_ids('postgres', 5432)
 PGDATA = getvar('PGDATA')
+DB_PASSWORD = getvar('DB_PASSWORD')
 CONFIG_FILE = getvar('CONFIG_FILE')
 HBA_FILE = getvar('HBA_FILE')
 SOCKET_DIR = getvar('SOCKET_DIR')
@@ -31,16 +32,44 @@ LOG_DIR = getvar('LOG_DIR', required=False)
 BACKUP_DIR = getvar('BACKUP_DIR')
 SEMAPHORE = getvar('SEMAPHORE', required=False)
 
+
+def _init(stopper):
+    ensure_dir(
+        PGDATA_PARENT, owner='root', group='root', permission_str='777')
+    ensure_dir(
+        SOCKET_DIR, owner='root', group='root', permission_str='777')
+    ensure_dir(
+        LOG_DIR, owner='root', group='root', permission_str='777')
+    ensure_dir(
+        BACKUP_DIR, owner='root', group='root', permission_str='777')
+    if SEMAPHORE_PARENT:
+        ensure_dir(
+            SEMAPHORE_PARENT, owner='root', group='root', permission_str='777')
+
+    # copy config files
+    copyfile(CONFIG_FILE, '/postgresql.conf',
+             owner=USER_NAME, group=GROUP_NAME, permission_str='400')
+    copyfile(HBA_FILE, '/pg_hba.conf',
+             owner=USER_NAME, group=GROUP_NAME, permission_str='400')
+
+    substitute('/postgresql.conf', {'SOCKET_DIR': SOCKET_DIR,
+                                    'LOG_DIR': LOG_DIR})
+
+    if not os.path.isdir(PGDATA):
+        _initdb()
+        _setpwd(USER_NAME, DB_PASSWORD)
+
+
+# ##################################
+# # UTILITY FUNCTIONS: do not edit #
+# ##################################
+
 PGDATA_PARENT = os.path.split(PGDATA)[0]
 if SEMAPHORE:
     SEMAPHORE_PARENT = os.path.split(SEMAPHORE)[0]
 else:
     SEMAPHORE_PARENT = None
 
-
-# ##################################
-# # UTILITY FUNCTIONS: do not edit #
-# ##################################
 
 start_postgres = ['postgres', '-c', 'config_file=%s' % '/postgresql.conf']
 
@@ -117,7 +146,8 @@ def _setpwd(username, password):
     sql = "ALTER USER %s WITH PASSWORD '%s'" % (username, password)
 
     with running_db():
-        run_cmd(psqlparams(sql), 'Setting password', user=USER_NAME)
+        run_cmd(psqlparams(sql), 'Setting password', user=USER_NAME,
+                printoutput=True)
 
 
 def _createdb(dbname, owner):
@@ -235,30 +265,7 @@ def _clear(confirm=True):
 
 @click.group()
 def run():
-    ensure_user(USER_NAME, USER_ID, gid=GROUP_ID)
-    ensure_dir(
-        PGDATA_PARENT, owner='root', group='root', permission_str='777')
-    ensure_dir(
-        SOCKET_DIR, owner='root', group='root', permission_str='777')
-    ensure_dir(
-        LOG_DIR, owner='root', group='root', permission_str='777')
-    ensure_dir(
-        BACKUP_DIR, owner='root', group='root', permission_str='777')
-    if SEMAPHORE_PARENT:
-        ensure_dir(
-            SEMAPHORE_PARENT, owner='root', group='root', permission_str='777')
-
-    if not os.path.isdir(PGDATA):
-        _initdb()
-
-    # copy config files
-    copyfile(CONFIG_FILE, '/postgresql.conf',
-             owner=USER_NAME, group=GROUP_NAME, permission_str='400')
-    copyfile(HBA_FILE, '/pg_hba.conf',
-             owner=USER_NAME, group=GROUP_NAME, permission_str='400')
-
-    substitute('/postgresql.conf', {'SOCKET_DIR': SOCKET_DIR,
-                                    'LOG_DIR': LOG_DIR})
+    ensure_user(USER_NAME, USER_ID, GROUP_NAME, GROUP_ID)
 
 
 @run.command()
@@ -268,8 +275,8 @@ def shell(user):
 
 
 @run.command()
-def initdb():
-    _initdb()
+def init():
+    _init(Stopper())
 
 
 @run.command()
@@ -328,7 +335,8 @@ def clear():
 
 @run.command()
 def start():
-    run_daemon(start_postgres, user=USER_NAME, semaphore=SEMAPHORE)
+    run_daemon(start_postgres, user=USER_NAME, semaphore=SEMAPHORE,
+               initfunc=_init)
 
 
 if __name__ == '__main__':

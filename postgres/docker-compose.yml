@@ -21,10 +21,12 @@ postgres:
         USER_ID: 5432
         USER_NAME: pg
         PGDATA: /opt/data/postgres
+        DB_PASSWORD: 'secret-!noproduction!'
         CONFIG_FILE: /opt/config/postgresql.conf
         HBA_FILE: /opt/config/pg_hba.conf
         SOCKET_DIR: /opt/data/sockets
         LOG_DIR: /opt/data/logs/postgres
         BACKUP_DIR: /opt/data/db_backup
+        SEMAPHORE: /opt/data/semaphores/postgres
     ports:
         - "5432:5432"
