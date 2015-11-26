@@ -1,0 +1,10 @@
+nodejs:
+    hostname: nodejs
+    image: vertisfinance/nodejs
+    command: start
+    volumes:
+        - "./config:/opt/config"
+        - "./src:/opt/src"
+    environment:
+        USER_NAME: nodejs
+        USER_ID: 1000
