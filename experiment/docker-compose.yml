@@ -1,0 +1,7 @@
+experiment:
+    hostname: experiment
+    image: vertisfinance/experiment
+    entrypoint: ['bash', '/opt/config/start.sh']
+    command: ['']
+    volumes:
+        - "./config:/opt/config"
