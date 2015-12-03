@@ -1,6 +1,6 @@
 import click
 
-from runutils import runbash, ensure_user, get_user_ids, run_daemon
+from runutils import runbash, ensure_user, get_user_ids
 
 
 USER_NAME, USER_ID, GROUP_NAME, GROUP_ID = get_user_ids('nodejs', 8080)
@@ -20,8 +20,7 @@ def shell(user):
 
 @run.command()
 def start():
-    params = ['nodejs', '/opt/src/tunnel/build.js']
-    run_daemon(params, user=USER_NAME)
+    pass
 
 
 if __name__ == '__main__':
